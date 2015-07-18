@@ -269,6 +269,34 @@ Elm.Basics.make = function (_elm) {
                         ,EQ: EQ
                         ,GT: GT};
    return _elm.Basics.values;
+};Elm.Bitwise = Elm.Bitwise || {};
+Elm.Bitwise.make = function (_elm) {
+   "use strict";
+   _elm.Bitwise = _elm.Bitwise || {};
+   if (_elm.Bitwise.values)
+   return _elm.Bitwise.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "Bitwise",
+   $Native$Bitwise = Elm.Native.Bitwise.make(_elm);
+   var shiftRightLogical = $Native$Bitwise.shiftRightLogical;
+   var shiftRight = $Native$Bitwise.shiftRightArithmatic;
+   var shiftLeft = $Native$Bitwise.shiftLeft;
+   var complement = $Native$Bitwise.complement;
+   var xor = $Native$Bitwise.xor;
+   var or = $Native$Bitwise.or;
+   var and = $Native$Bitwise.and;
+   _elm.Bitwise.values = {_op: _op
+                         ,and: and
+                         ,or: or
+                         ,xor: xor
+                         ,complement: complement
+                         ,shiftLeft: shiftLeft
+                         ,shiftRight: shiftRight
+                         ,shiftRightLogical: shiftRightLogical};
+   return _elm.Bitwise.values;
 };Elm.Char = Elm.Char || {};
 Elm.Char.make = function (_elm) {
    "use strict";
@@ -3582,8 +3610,10 @@ Elm.Main.make = function (_elm) {
    _L = _N.List.make(_elm),
    $moduleName = "Main",
    $Basics = Elm.Basics.make(_elm),
+   $Bitwise = Elm.Bitwise.make(_elm),
    $Char = Elm.Char.make(_elm),
    $Color = Elm.Color.make(_elm),
+   $Dict = Elm.Dict.make(_elm),
    $Graphics$Collage = Elm.Graphics.Collage.make(_elm),
    $Graphics$Element = Elm.Graphics.Element.make(_elm),
    $Keyboard = Elm.Keyboard.make(_elm),
@@ -3591,530 +3621,260 @@ Elm.Main.make = function (_elm) {
    $Markdown = Elm.Markdown.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
+   $Set = Elm.Set.make(_elm),
    $Signal = Elm.Signal.make(_elm),
    $String = Elm.String.make(_elm),
    $Text = Elm.Text.make(_elm),
+   $Time = Elm.Time.make(_elm),
    $Window = Elm.Window.make(_elm);
-   var faq = $Markdown.toElement("\n**What is this**\n\nA short demonstration of an input method for 10 fingers.\nIt uses *chorded inputs*, so you have to press several keys to get an output.\nThis has some advantages:\n * your fingers need less movement (for if you are troubled with RSI)\n * a keyboard (or a glove!) with 10 keys is easier to transport\n * it may be better for touch screens\n \nBut because of its chorded nature, it is probably slower than a keyboard when only typing single characters.\n\n**What is so special?**\n\nNot much.\nThis is not a novelty, as there exist some chorded keyboards and implementations for a long time — even for 10 fingers.\n\nBut the layout presented here has some small differences.\nMainly, it does not allow having mixed chords for letters.\nSo every chord uses either the left or the right hand.\n\nIf you have mixed chords and press a chord with your left hand,\nyour right hand needs to wait before pressing anything,\nas the combination of both could be the mixed chord.\n\nHere you can press DF down, then press J, and afterward release DF.\nThe implementation knows that your hand is done with a chord as soon a you press any key with the other hand. \nHopefully this will improve typing speed.\n\nAlso, an open source implementation for keyboards is in development.\n\n**Aren\'t there too few keys?**\n\nYou may have two thumbs and eight other fingers.\nIf not, unfortunately this layout is not suited for you.\nThe thumbs allow a combination of 2 x 2 = 4 layers.\nOnly at the two main layers (a-z and A-Z) the mixed chords are disallowed,\ngiving both 2 x (2^4 - 1) = 30 chords for the home row.\nAt the other layers, with mixed chords allowed, there are 2^8 - 1 = 255 possibilities.\nPlenty enough for numbers, brackets, common words, special characters and more.\nBut they are not implemented here yet.\n\nAlltogether there are 2x30 + 2x255 = 570 chords.\n\n**This does not work**\n\n * Please change your system layout to US-QWERTY.\n\n * Combinations that uses multiple keys may or may not work based on your browser and keyboard.\n\n * Uppercase letters seem to be bugged anyway.\n");
+   var faq = $Markdown.toElement("\n**What is this**\n\nA short demonstration of an input method for 10 fingers.\nIt uses *chorded inputs*, so you have to press several keys to get an output.\nThis has some advantages:\n * your fingers need less movement (for if you are troubled with RSI)\n * a keyboard (or a glove!) with 10 keys is easier to transport\n * it may be better for touch screens\n \nBut because of its chorded nature, it is probably slower than a keyboard when only \ntyping single characters.\n\n**How do I type?**\n\nThe demo registers the last active chord if\n * the same chord is hold longer then 60 milliseconds,\n * the other hand presses anything, or\n * the fingers of the last active hand leaves all keys\n\nMost chorded layouts only depend on the last point.\nBut this is slow when processing single characters (and not [words](http://openstenoproject.org/)).\n\nIf typing english words with this layout,\nhalf of the time you can speed up by alternating hands.\nThe time limit makes the setup prone to errors,\nbut a good implementation could figure out via try and error,\nhow much time you need to change a chord.\n\nThe big plus on the other hand is,\nthat you can do roll-overs.\nWant to type the common “to”?\nHold UIO down, then press P. And you are done!\nYou can try to find long combinations to form words,\nbut it is suggested to raise the keys every second chord.\nInstead of typing “rain” in one go, write “ra” and then “in”.\n\nThe layout was optimized to:\n * switch hands as much as possible\n * if characters are on the same hand, try to give them an increasing (press more keys) or decreasing \n(leave some keys) combination of keys \n * and not a complicated one, where a hand needs to raise *and* press\n * give more common characters easier chords\n\nThis means that complicated combinations\nshould be handled as leaving all keys from the first chord,\nthen pressing the second. \nOtherwise, at least at the beginning,\nyou will make many mistakes because of the time limit.\n\nFor the english corpus I used this comes down to:\n* 47% hand switches between letters\n* 27% increasing combos\n* 21% decreasing combos\n* 5% complicated combos\n\n\n**Aren\'t there too few keys?**\n\nYou may have two thumbs and eight other fingers.\nIf not, unfortunately this layout is not suited for you.\nThe thumbs allow a combination of 2 x 2 = 4 layers.\nOnly at the two main layers (a-z and A-Z) the left and right mixed chords are disallowed,\ngiving both 2 x (2^4 - 1) = 30 chords for the home row.\nAt the other layers, with mixed chords allowed, there are 2^8 - 1 = 255 \npossibilities.\nPlenty enough for numbers, brackets, common words, special characters and more.\nBut they are not implemented here yet.\n\nAlltogether there are 2x30 + 2x255 = 570 chords.\n\n**This does not work!**\n\n * Please change your system layout to US-QWERTY.\n\n * Combinations that uses multiple keys may or may not work based on your browser \nand keyboard.\n\n * Uppercase letters seem to be bugged anyway.\n");
    var intro = $Graphics$Element.centered($Text.concat(_L.fromArray([$Text.fromString("Write something using ")
-                                                                    ,$Text.color($Color.blue)($Text.bold($Text.fromString("ASDF")))
+                                                                    ,$Text.color($Color.blue)($Text.bold($Text.fromString("QWER")))
                                                                     ,$Text.fromString(", ")
-                                                                    ,$Text.color($Color.red)($Text.bold($Text.fromString("JKL;")))
+                                                                    ,$Text.color($Color.red)($Text.bold($Text.fromString("UIOP")))
                                                                     ,$Text.fromString(" and ")
                                                                     ,$Text.color($Color.yellow)($Text.bold($Text.fromString(" CM")))])));
-   var uncurry3 = F2(function (f,
-   _v0) {
-      return function () {
-         switch (_v0.ctor)
-         {case "_Tuple3": return A3(f,
-              _v0._0,
-              _v0._1,
-              _v0._2);}
-         _U.badCase($moduleName,
-         "on line 179, column 24 to 31");
-      }();
-   });
-   var square = $Graphics$Collage.path(_L.fromArray([{ctor: "_Tuple2"
-                                                     ,_0: 10
-                                                     ,_1: 10}
-                                                    ,{ctor: "_Tuple2"
-                                                     ,_0: 10
-                                                     ,_1: -10}
-                                                    ,{ctor: "_Tuple2"
-                                                     ,_0: -10
-                                                     ,_1: -10}
-                                                    ,{ctor: "_Tuple2"
-                                                     ,_0: -10
-                                                     ,_1: 10}
-                                                    ,{ctor: "_Tuple2"
-                                                     ,_0: 10
-                                                     ,_1: 10}]));
-   var emptySquare = A3($Graphics$Collage.collage,
-   22,
-   22,
-   _L.fromArray([]));
-   var redSquare = A3($Graphics$Collage.collage,
-   22,
-   22,
-   _L.fromArray([A2($Graphics$Collage.filled,
-   $Color.red,
-   square)]));
-   var blueSquare = A3($Graphics$Collage.collage,
-   22,
-   22,
-   _L.fromArray([A2($Graphics$Collage.filled,
-   $Color.blue,
-   square)]));
    var row = F2(function (e,bs) {
       return $Graphics$Element.flow($Graphics$Element.right)(A3($List.map2,
       F2(function (a,b) {
-         return a ? b : emptySquare;
+         return a ? b : A3($Graphics$Collage.collage,
+         22,
+         22,
+         _L.fromArray([]));
       }),
       bs,
       A2($List.repeat,4,e)));
    });
-   var displayChord = F3(function (left,
-   bs,
-   s) {
-      return A2($Graphics$Element.flow,
-      $Graphics$Element.right,
-      _L.fromArray([A4($Graphics$Element.container,
-                   25,
-                   22,
-                   $Graphics$Element.middle,
-                   $Graphics$Element.centered($Text.fromString($String.toUpper(s))))
-                   ,A2(row,
-                   left ? blueSquare : redSquare,
-                   bs)]));
-   });
-   var changed = F2(function (old,
-   $new) {
-      return A3($List.map2,
-      F2(function (o,n) {
-         return $Basics.not(o) && n;
-      }),
-      old,
-      $new);
-   });
-   var $default = {_: {}
-                  ,input: "\n"
-                  ,leftDown: false
-                  ,leftInput: _L.fromArray([false
-                                           ,false
-                                           ,false
-                                           ,false])
-                  ,leftPressed: _L.fromArray([false
-                                             ,false
-                                             ,false
-                                             ,false])
-                  ,modDown: false
-                  ,modInput: _L.fromArray([false
-                                          ,false])
-                  ,modPressed: _L.fromArray([false
-                                            ,false])
-                  ,rightDown: false
-                  ,rightInput: _L.fromArray([false
-                                            ,false
-                                            ,false
-                                            ,false])
-                  ,rightPressed: _L.fromArray([false
-                                              ,false
-                                              ,false
-                                              ,false])};
-   var Keys = function (a) {
-      return function (b) {
-         return function (c) {
-            return function (d) {
-               return function (e) {
-                  return function (f) {
-                     return function (g) {
-                        return function (h) {
-                           return function (i) {
-                              return function (j) {
-                                 return {_: {}
-                                        ,input: j
-                                        ,leftDown: b
-                                        ,leftInput: c
-                                        ,leftPressed: a
-                                        ,modDown: h
-                                        ,modInput: i
-                                        ,modPressed: g
-                                        ,rightDown: e
-                                        ,rightInput: f
-                                        ,rightPressed: d};
-                              };
-                           };
-                        };
-                     };
-                  };
-               };
-            };
-         };
-      };
-   };
-   var toBools2 = F2(function (a,
-   b) {
-      return _L.fromArray([a,b]);
-   });
-   var toBools4 = F4(function (a,
-   b,
-   c,
-   d) {
-      return _L.fromArray([a
-                          ,b
-                          ,c
-                          ,d]);
-   });
-   var ks = function (chr) {
-      return $Keyboard.isDown($Char.toCode(chr));
-   };
-   var left = A5($Signal.map4,
-   toBools4,
-   ks(_U.chr("A")),
-   ks(_U.chr("S")),
-   ks(_U.chr("D")),
-   ks(_U.chr("F")));
-   var right = A5($Signal.map4,
-   toBools4,
-   ks(_U.chr("J")),
-   ks(_U.chr("K")),
-   ks(_U.chr("L")),
-   $Keyboard.isDown(186));
-   var mods = A3($Signal.map2,
-   toBools2,
-   ks(_U.chr("C")),
-   ks(_U.chr("M")));
-   var input = A4($Signal.map3,
-   F3(function (a,b,c) {
-      return {ctor: "_Tuple3"
-             ,_0: a
-             ,_1: b
-             ,_2: c};
-   }),
-   left,
-   right,
-   mods);
-   var rightKeyMap = _L.fromArray([{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([false
-                                                     ,false
-                                                     ,true
-                                                     ,true])
-                                   ,_1: "c"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([false
-                                                     ,true
-                                                     ,true
-                                                     ,false])
-                                   ,_1: "d"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([false
-                                                     ,true
-                                                     ,true
-                                                     ,true])
-                                   ,_1: "f"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([false
-                                                     ,false
-                                                     ,false
-                                                     ,true])
-                                   ,_1: "h"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([true
-                                                     ,false
-                                                     ,false
-                                                     ,true])
-                                   ,_1: "j"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([true
-                                                     ,true
-                                                     ,false
-                                                     ,false])
-                                   ,_1: "l"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([true
-                                                     ,true
-                                                     ,true
-                                                     ,false])
-                                   ,_1: "m"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([true
-                                                     ,false
-                                                     ,false
-                                                     ,false])
-                                   ,_1: "n"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([false
-                                                     ,false
-                                                     ,true
-                                                     ,false])
-                                   ,_1: "r"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([false
-                                                     ,true
-                                                     ,false
-                                                     ,false])
-                                   ,_1: "s"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([true
-                                                     ,false
-                                                     ,true
-                                                     ,true])
-                                   ,_1: "v"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([true
-                                                     ,true
-                                                     ,true
-                                                     ,true])
-                                   ,_1: "w"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([true
-                                                     ,false
-                                                     ,true
-                                                     ,true])
-                                   ,_1: "x"}
-                                  ,{ctor: "_Tuple2"
-                                   ,_0: _L.fromArray([false
-                                                     ,true
-                                                     ,false
-                                                     ,true])
-                                   ,_1: ","}]);
-   var leftKeyMap = _L.fromArray([{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([true
-                                                    ,false
-                                                    ,false
-                                                    ,false])
-                                  ,_1: "a"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([false
-                                                    ,true
-                                                    ,false
-                                                    ,true])
-                                  ,_1: "b"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([false
-                                                    ,true
-                                                    ,false
-                                                    ,false])
-                                  ,_1: "e"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([true
-                                                    ,true
-                                                    ,true
-                                                    ,false])
-                                  ,_1: "g"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([false
-                                                    ,true
-                                                    ,true
-                                                    ,false])
-                                  ,_1: "i"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([true
-                                                    ,false
-                                                    ,false
-                                                    ,true])
-                                  ,_1: "k"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([false
-                                                    ,false
-                                                    ,true
-                                                    ,true])
-                                  ,_1: "o"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([false
-                                                    ,true
-                                                    ,true
-                                                    ,true])
-                                  ,_1: "p"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([true
-                                                    ,false
-                                                    ,true
-                                                    ,true])
-                                  ,_1: "q"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([false
-                                                    ,false
-                                                    ,false
-                                                    ,true])
-                                  ,_1: "t"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([true
-                                                    ,true
-                                                    ,false
-                                                    ,false])
-                                  ,_1: "u"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([true
-                                                    ,true
-                                                    ,true
-                                                    ,true])
-                                  ,_1: "y"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([true
-                                                    ,true
-                                                    ,false
-                                                    ,true])
-                                  ,_1: "z"}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([false
-                                                    ,false
-                                                    ,true
-                                                    ,false])
-                                  ,_1: " "}
-                                 ,{ctor: "_Tuple2"
-                                  ,_0: _L.fromArray([true
-                                                    ,false
-                                                    ,true
-                                                    ,false])
-                                  ,_1: "."}]);
-   var keyMap = function () {
-      var change = F2(function (a,
-      _v5) {
-         return function () {
-            switch (_v5.ctor)
-            {case "_Tuple2":
-               return {ctor: "_Tuple3"
-                      ,_0: a
-                      ,_1: _v5._0
-                      ,_2: _v5._1};}
-            _U.badCase($moduleName,
-            "on line 54, column 26 to 33");
-         }();
-      });
-      return A2($Basics._op["++"],
-      A2($List.map,
-      change(true),
-      leftKeyMap),
-      A2($List.map,
-      change(false),
-      rightKeyMap));
-   }();
-   var handle = F4(function (s,
-   left,
-   mod,
+   var displayChord = F2(function (s,
    keys) {
       return function () {
-         var func = F2(function (_v9,
-         old) {
-            return function () {
-               switch (_v9.ctor)
-               {case "_Tuple3":
-                  return _U.eq({ctor: "_Tuple2"
-                               ,_0: _v9._0
-                               ,_1: _v9._1},
-                    {ctor: "_Tuple2"
-                    ,_0: left
-                    ,_1: keys}) ? _v9._2 : old;}
-               _U.badCase($moduleName,
-               "on line 99, column 31 to 77");
-            }();
-         });
-         var key = A3($List.foldr,
-         func,
-         "",
-         keyMap);
-         var upKey = function () {
-            switch (key)
-            {case " ": return "\n";
-               case ",": return "?";
-               case ".": return "!";}
-            return $String.toUpper(key);
-         }();
-         return A2($Basics._op["++"],
-         s,
-         _U.eq(mod,
-         _L.fromArray([false
-                      ,false])) ? key : upKey);
+         var square = $Graphics$Collage.path(_L.fromArray([{ctor: "_Tuple2"
+                                                           ,_0: 10
+                                                           ,_1: 10}
+                                                          ,{ctor: "_Tuple2"
+                                                           ,_0: 10
+                                                           ,_1: -10}
+                                                          ,{ctor: "_Tuple2"
+                                                           ,_0: -10
+                                                           ,_1: -10}
+                                                          ,{ctor: "_Tuple2"
+                                                           ,_0: -10
+                                                           ,_1: 10}
+                                                          ,{ctor: "_Tuple2"
+                                                           ,_0: 10
+                                                           ,_1: 10}]));
+         var blueSquare = A3($Graphics$Collage.collage,
+         22,
+         22,
+         _L.fromArray([A2($Graphics$Collage.filled,
+         $Color.blue,
+         square)]));
+         var redSquare = A3($Graphics$Collage.collage,
+         22,
+         22,
+         _L.fromArray([A2($Graphics$Collage.filled,
+         $Color.red,
+         square)]));
+         var bs = A2($List.map,
+         function (x) {
+            return A2($List.member,
+            x,
+            keys);
+         },
+         _L.fromArray([0
+                      ,1
+                      ,2
+                      ,3
+                      ,6
+                      ,7
+                      ,8
+                      ,9]));
+         var left = A2($List.any,
+         $Basics.identity,
+         A2($List.take,4,bs));
+         var bs$ = (left ? $List.take(4) : $List.drop(4))(bs);
+         return A2($Graphics$Element.flow,
+         $Graphics$Element.right,
+         _L.fromArray([A4($Graphics$Element.container,
+                      25,
+                      22,
+                      $Graphics$Element.middle,
+                      $Graphics$Element.centered($Text.fromString($String.toUpper(s))))
+                      ,A2(row,
+                      left ? blueSquare : redSquare,
+                      bs$)]));
       }();
    });
-   var update = F2(function (_v15,
-   ks) {
+   var keysetToList = function (ks) {
       return function () {
-         switch (_v15.ctor)
-         {case "_Tuple3":
-            return function () {
-                 var rightChanged = A2(changed,
-                 ks.rightInput,
-                 _v15._1);
-                 var leftChanged = A2(changed,
-                 ks.leftInput,
-                 _v15._0);
-                 var modChanged = A2(changed,
-                 ks.modInput,
-                 _v15._2);
-                 var $new = {_: {}
-                            ,input: ks.input
-                            ,leftDown: A3($List.foldr,
-                            F2(function (x,y) {
-                               return x || y;
-                            }),
-                            false,
-                            _v15._0)
-                            ,leftInput: _v15._0
-                            ,leftPressed: A3($List.map2,
-                            F2(function (x,y) {
-                               return x || y;
-                            }),
-                            leftChanged,
-                            ks.leftPressed)
-                            ,modDown: A3($List.foldr,
-                            F2(function (x,y) {
-                               return x || y;
-                            }),
-                            false,
-                            _v15._2)
-                            ,modInput: _v15._2
-                            ,modPressed: A3($List.map2,
-                            F2(function (x,y) {
-                               return x || y;
-                            }),
-                            modChanged,
-                            ks.modPressed)
-                            ,rightDown: A3($List.foldr,
-                            F2(function (x,y) {
-                               return x || y;
-                            }),
-                            false,
-                            _v15._1)
-                            ,rightInput: _v15._1
-                            ,rightPressed: A3($List.map2,
-                            F2(function (x,y) {
-                               return x || y;
-                            }),
-                            rightChanged,
-                            ks.rightPressed)};
-                 return ($Basics.not($new.leftDown) || $new.rightDown) && ks.leftDown ? _U.replace([["input"
-                                                                                                    ,A4(handle,
-                                                                                                    ks.input,
-                                                                                                    true,
-                                                                                                    $new.modPressed,
-                                                                                                    $new.leftPressed)]
-                                                                                                   ,["leftPressed"
-                                                                                                    ,A2($List.repeat,
-                                                                                                    4,
-                                                                                                    false)]
-                                                                                                   ,["modPressed"
-                                                                                                    ,A2($List.repeat,
-                                                                                                    2,
-                                                                                                    false)]],
-                 $new) : ($Basics.not($new.rightDown) || $new.leftDown) && ks.rightDown ? _U.replace([["input"
-                                                                                                      ,A4(handle,
-                                                                                                      ks.input,
-                                                                                                      false,
-                                                                                                      $new.modPressed,
-                                                                                                      $new.rightPressed)]
-                                                                                                     ,["rightPressed"
-                                                                                                      ,A2($List.repeat,
-                                                                                                      4,
-                                                                                                      false)]
-                                                                                                     ,["modPressed"
-                                                                                                      ,A2($List.repeat,
-                                                                                                      2,
-                                                                                                      false)]],
-                 $new) : $new;
-              }();}
+         var left = _U.cmp(ks,
+         A2($Bitwise.shiftLeft,1,4)) < 0;
+         var list = $List.map(function (i) {
+            return _U.cmp(A2($Bitwise.and,
+            A2($Bitwise.shiftLeft,1,i),
+            ks),
+            0) > 0;
+         })(A2($List.map,
+         function (i) {
+            return left ? i : i + 6;
+         },
+         _L.fromArray([0,1,2,3])));
+         return {ctor: "_Tuple2"
+                ,_0: left
+                ,_1: list};
+      }();
+   };
+   var Keys = function (a) {
+      return {ctor: "Keys",_0: a};
+   };
+   var Print = function (a) {
+      return {ctor: "Print",_0: a};
+   };
+   var Model = F6(function (a,
+   b,
+   c,
+   d,
+   e,
+   f) {
+      return {_: {}
+             ,active: e
+             ,input: a
+             ,last: c
+             ,lastActive: f
+             ,text: b
+             ,time: d};
+   });
+   var Right = {ctor: "Right"};
+   var Neither = {ctor: "Neither"};
+   var defaultModel = {_: {}
+                      ,active: Neither
+                      ,input: 0
+                      ,last: 0
+                      ,lastActive: Neither
+                      ,text: "\n"
+                      ,time: 0};
+   var Left = {ctor: "Left"};
+   var flipHands = $List.map(function (_v0) {
+      return function () {
+         switch (_v0.ctor)
+         {case "_Tuple2":
+            return {ctor: "_Tuple2"
+                   ,_0: _v0._0
+                   ,_1: A2($List.map,
+                   function (k) {
+                      return 9 - k;
+                   },
+                   _v0._1)};}
          _U.badCase($moduleName,
-         "between lines 113 and 139");
+         "on line 130, column 31 to 54");
       }();
    });
+   var leftKeyMap = _L.fromArray([{ctor: "_Tuple2"
+                                  ,_0: "c"
+                                  ,_1: _L.fromArray([3])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: " "
+                                  ,_1: _L.fromArray([2])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "h"
+                                  ,_1: _L.fromArray([2,3])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "u"
+                                  ,_1: _L.fromArray([1])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "q"
+                                  ,_1: _L.fromArray([1,3])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "s"
+                                  ,_1: _L.fromArray([1,2])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "t"
+                                  ,_1: _L.fromArray([1,2,3])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "v"
+                                  ,_1: _L.fromArray([0])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "k"
+                                  ,_1: _L.fromArray([0,3])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "f"
+                                  ,_1: _L.fromArray([0,2])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "w"
+                                  ,_1: _L.fromArray([0,2,3])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "j"
+                                  ,_1: _L.fromArray([0,1])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "z"
+                                  ,_1: _L.fromArray([0,1,3])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "m"
+                                  ,_1: _L.fromArray([0,1,2])}
+                                 ,{ctor: "_Tuple2"
+                                  ,_0: "o"
+                                  ,_1: _L.fromArray([0,1,2,3])}]);
+   var rightKeyMap = _L.fromArray([{ctor: "_Tuple2"
+                                   ,_0: "i"
+                                   ,_1: _L.fromArray([6])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "y"
+                                   ,_1: _L.fromArray([7])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: ","
+                                   ,_1: _L.fromArray([6,7])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "e"
+                                   ,_1: _L.fromArray([8])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "d"
+                                   ,_1: _L.fromArray([8,6])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "g"
+                                   ,_1: _L.fromArray([8,7])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "n"
+                                   ,_1: _L.fromArray([7,8,6])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "x"
+                                   ,_1: _L.fromArray([9])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "b"
+                                   ,_1: _L.fromArray([6,9])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "."
+                                   ,_1: _L.fromArray([9,7])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "p"
+                                   ,_1: _L.fromArray([9,8])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "l"
+                                   ,_1: _L.fromArray([6,8,9])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "r"
+                                   ,_1: _L.fromArray([9,7,8])}
+                                  ,{ctor: "_Tuple2"
+                                   ,_0: "a"
+                                   ,_1: _L.fromArray([6,7,8,9])}]);
+   var keyList = flipHands(A2($Basics._op["++"],
+   leftKeyMap,
+   rightKeyMap));
    var sheet = function () {
       var col = function (c) {
          return $Graphics$Element.flow($Graphics$Element.down)(A2($List.map,
-         uncurry3(displayChord),
+         $Basics.uncurry(displayChord),
          c));
       };
       var keys = A2($List.sortBy,
-      function (_v20) {
+      function (_v4) {
          return function () {
-            switch (_v20.ctor)
-            {case "_Tuple3":
-               return _v20._2;}
+            switch (_v4.ctor)
+            {case "_Tuple2": return _v4._0;}
             _U.badCase($moduleName,
-            "on line 191, column 36 to 37");
+            "on line 290, column 33 to 34");
          }();
       },
-      keyMap);
+      keyList);
       var col1 = A2($List.take,
       10,
       keys);
@@ -4132,10 +3892,9 @@ Elm.Main.make = function (_elm) {
                    ,col(col2)
                    ,col(col3)])));
    }();
-   var view = F2(function (_v25,
-   d) {
+   var view = F2(function (_v8,d) {
       return function () {
-         switch (_v25.ctor)
+         switch (_v8.ctor)
          {case "_Tuple2":
             return A2($Graphics$Element.flow,
               $Graphics$Element.down,
@@ -4145,44 +3904,287 @@ Elm.Main.make = function (_elm) {
                            $Graphics$Element.middle,
                            intro)
                            ,sheet
-                           ,$Graphics$Element.leftAligned($Text.fromString(d.input))
+                           ,$Graphics$Element.leftAligned($Text.fromString(d.text))
                            ,faq]));}
          _U.badCase($moduleName,
-         "between lines 147 and 151");
+         "between lines 250 and 254");
       }();
    });
+   var charToIndex = function (c) {
+      return function () {
+         switch (c + "")
+         {case "C": return 4;
+            case "E": return 2;
+            case "I": return 7;
+            case "M": return 5;
+            case "O": return 8;
+            case "P": return 9;
+            case "Q": return 0;
+            case "R": return 3;
+            case "U": return 6;
+            case "W": return 1;}
+         return 10;
+      }();
+   };
+   var keysToKeyset = A2($List.foldr,
+   F2(function (k,old) {
+      return old + A2($Bitwise.shiftLeft,
+      1,
+      k);
+   }),
+   0);
+   var keyMap = function () {
+      var keys = keyList;
+      var upper1 = A2($List.map,
+      function (_v13) {
+         return function () {
+            switch (_v13.ctor)
+            {case "_Tuple2":
+               return {ctor: "_Tuple2"
+                      ,_0: $String.toUpper(_v13._0)
+                      ,_1: A2($List._op["::"],
+                      4,
+                      _v13._1)};}
+            _U.badCase($moduleName,
+            "on line 135, column 33 to 55");
+         }();
+      },
+      keys);
+      var upper2 = A2($List.map,
+      function (_v17) {
+         return function () {
+            switch (_v17.ctor)
+            {case "_Tuple2":
+               return {ctor: "_Tuple2"
+                      ,_0: $String.toUpper(_v17._0)
+                      ,_1: A2($List._op["::"],
+                      5,
+                      _v17._1)};}
+            _U.badCase($moduleName,
+            "on line 136, column 33 to 55");
+         }();
+      },
+      keys);
+      return $Dict.fromList(A2($List.map,
+      function (_v21) {
+         return function () {
+            switch (_v21.ctor)
+            {case "_Tuple2":
+               return {ctor: "_Tuple2"
+                      ,_0: keysToKeyset(_v21._1)
+                      ,_1: _v21._0};}
+            _U.badCase($moduleName,
+            "on line 137, column 46 to 69");
+         }();
+      },
+      A2($Basics._op["++"],
+      keys,
+      A2($Basics._op["++"],
+      upper1,
+      upper2))));
+   }();
+   var charsToKeyset = A2($List.foldr,
+   F2(function (k,old) {
+      return old + A2($Bitwise.shiftLeft,
+      1,
+      charToIndex(k));
+   }),
+   0);
+   var rawInput = $Time.timestamp(A2($Signal.map,
+   function ($) {
+      return charsToKeyset($List.map($Char.fromCode)($Set.toList($)));
+   },
+   $Keyboard.keysDown));
+   var rightMod = $Bitwise.and(keysToKeyset(_L.fromArray([4
+                                                         ,5
+                                                         ,6
+                                                         ,7
+                                                         ,8
+                                                         ,9])));
+   var leftMod = $Bitwise.and(keysToKeyset(_L.fromArray([0
+                                                        ,1
+                                                        ,2
+                                                        ,3
+                                                        ,4
+                                                        ,5])));
+   var getSideMod = function (side) {
+      return function () {
+         switch (side.ctor)
+         {case "Left": return leftMod;
+            case "Neither":
+            return $Bitwise.and(0);
+            case "Right": return rightMod;}
+         _U.badCase($moduleName,
+         "between lines 166 and 169");
+      }();
+   };
+   var print = F3(function (s,
+   side,
+   keys) {
+      return function () {
+         var _v26 = A2($Dict.get,
+         A2(getSideMod,side,keys),
+         keyMap);
+         switch (_v26.ctor)
+         {case "Just":
+            return A2($Basics._op["++"],
+              s,
+              _v26._0);
+            case "Nothing": return s;}
+         _U.badCase($moduleName,
+         "between lines 177 and 179");
+      }();
+   });
+   var updatePrint = F2(function (_v28,
+   old) {
+      return function () {
+         switch (_v28.ctor)
+         {case "_Tuple2":
+            return $Basics.not(_U.eq(_v28._0,
+              old.time)) ? old : _U.replace([["text"
+                                             ,A3(print,
+                                             old.text,
+                                             old.active,
+                                             old.input)]
+                                            ,["last",_v28._1]
+                                            ,["active",old.lastActive]],
+              old);}
+         _U.badCase($moduleName,
+         "between lines 212 and 215");
+      }();
+   });
+   var right = $Bitwise.and(keysToKeyset(_L.fromArray([6
+                                                      ,7
+                                                      ,8
+                                                      ,9])));
+   var left = $Bitwise.and(keysToKeyset(_L.fromArray([0
+                                                     ,1
+                                                     ,2
+                                                     ,3])));
+   var getSide = function (side) {
+      return function () {
+         switch (side.ctor)
+         {case "Left": return left;
+            case "Neither":
+            return $Bitwise.and(0);
+            case "Right": return right;}
+         _U.badCase($moduleName,
+         "between lines 171 and 174");
+      }();
+   };
+   var toWait = 60 * $Time.millisecond;
+   var updateKeys = F2(function (_v33,
+   old) {
+      return function () {
+         switch (_v33.ctor)
+         {case "_Tuple2":
+            return function () {
+                 var changed = A2($Bitwise.xor,
+                 _v33._1,
+                 old.input);
+                 var $new = {_: {}
+                            ,active: _U.cmp(left(changed),
+                            0) > 0 ? Left : _U.cmp(right(changed),
+                            0) > 0 ? Right : Neither
+                            ,input: _v33._1
+                            ,last: _U.eq(old.input,
+                            0) ? _v33._1 : old.last
+                            ,lastActive: old.lastActive
+                            ,text: old.text
+                            ,time: _v33._0};
+                 var delta = _v33._0 - old.time;
+                 return _U.eq($new.active,
+                 old.lastActive) && (_U.eq(A2(getSide,
+                 $new.active,
+                 _v33._1),
+                 0) && _U.cmp(delta,
+                 toWait) < 0) ? _U.replace([["text"
+                                            ,A3(print,
+                                            old.text,
+                                            $new.active,
+                                            $new.last)]
+                                           ,["last",_v33._1]
+                                           ,["active",$new.active]],
+                 $new) : $Basics.not(_U.eq($new.active,
+                 old.active)) && _U.cmp(delta,
+                 toWait) < 0 ? _U.replace([["text"
+                                           ,A3(print,
+                                           old.text,
+                                           old.active,
+                                           old.input)]
+                                          ,["last",_v33._1]
+                                          ,["active",$new.active]],
+                 $new) : $new;
+              }();}
+         _U.badCase($moduleName,
+         "between lines 183 and 207");
+      }();
+   });
+   var update = F2(function (i,m) {
+      return function () {
+         switch (i.ctor)
+         {case "Keys":
+            return A2(updateKeys,i._0,m);
+            case "Print":
+            return A2(updatePrint,i._0,m);}
+         _U.badCase($moduleName,
+         "between lines 219 and 225");
+      }();
+   });
+   var input = function () {
+      var prints = $Time.delay(toWait)(A2($Signal.map,
+      Print,
+      rawInput));
+      var keys = A2($Signal.map,
+      Keys,
+      rawInput);
+      return A2($Signal.merge,
+      keys,
+      prints);
+   }();
+   var a = A3($Signal.foldp,
+   update,
+   defaultModel,
+   input);
    var main = A3($Signal.map2,
    view,
    $Window.dimensions,
-   A3($Signal.foldp,
-   update,
-   $default,
-   input));
+   a);
    _elm.Main.values = {_op: _op
-                      ,leftKeyMap: leftKeyMap
-                      ,rightKeyMap: rightKeyMap
-                      ,keyMap: keyMap
-                      ,ks: ks
-                      ,toBools4: toBools4
-                      ,toBools2: toBools2
+                      ,toWait: toWait
                       ,left: left
                       ,right: right
-                      ,mods: mods
-                      ,input: input
-                      ,Keys: Keys
-                      ,$default: $default
-                      ,handle: handle
-                      ,changed: changed
+                      ,leftMod: leftMod
+                      ,rightMod: rightMod
+                      ,charsToKeyset: charsToKeyset
+                      ,keysToKeyset: keysToKeyset
+                      ,charToIndex: charToIndex
+                      ,rightKeyMap: rightKeyMap
+                      ,leftKeyMap: leftKeyMap
+                      ,keyList: keyList
+                      ,flipHands: flipHands
+                      ,keyMap: keyMap
+                      ,Left: Left
+                      ,Neither: Neither
+                      ,Right: Right
+                      ,Model: Model
+                      ,defaultModel: defaultModel
+                      ,getSideMod: getSideMod
+                      ,getSide: getSide
+                      ,print: print
+                      ,updateKeys: updateKeys
+                      ,updatePrint: updatePrint
                       ,update: update
                       ,main: main
+                      ,a: a
+                      ,Print: Print
+                      ,Keys: Keys
+                      ,rawInput: rawInput
+                      ,input: input
                       ,view: view
+                      ,keysetToList: keysetToList
                       ,displayChord: displayChord
                       ,row: row
-                      ,blueSquare: blueSquare
-                      ,redSquare: redSquare
-                      ,emptySquare: emptySquare
-                      ,square: square
-                      ,uncurry3: uncurry3
                       ,intro: intro
                       ,sheet: sheet
                       ,faq: faq};
@@ -5429,6 +5431,34 @@ Elm.Native.Basics.make = function(localRuntime) {
 		isNaN: isNaN,
 		isInfinite: isInfinite
 	};
+};
+Elm.Native.Bitwise = {};
+Elm.Native.Bitwise.make = function(localRuntime) {
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Bitwise = localRuntime.Native.Bitwise || {};
+	if (localRuntime.Native.Bitwise.values)
+	{
+		return localRuntime.Native.Bitwise.values;
+	}
+
+	function and(a,b) { return a & b; }
+	function or (a,b) { return a | b; }
+	function xor(a,b) { return a ^ b; }
+	function not(a) { return ~a; }
+	function sll(a,offset) { return a << offset; }
+	function sra(a,offset) { return a >> offset; }
+	function srl(a,offset) { return a >>> offset; }
+
+	return localRuntime.Native.Bitwise.values = {
+		and: F2(and),
+		or : F2(or ),
+		xor: F2(xor),
+		complement: not,
+		shiftLeft           : F2(sll),
+		shiftRightArithmatic: F2(sra),
+		shiftRightLogical   : F2(srl)
+	};
+
 };
 Elm.Native.Char = {};
 Elm.Native.Char.make = function(localRuntime) {
@@ -10065,6 +10095,116 @@ Elm.Native.Text.make = function(localRuntime) {
 		renderHtml: renderHtml
 	};
 };
+Elm.Native.Time = {};
+Elm.Native.Time.make = function(localRuntime)
+{
+
+	localRuntime.Native = localRuntime.Native || {};
+	localRuntime.Native.Time = localRuntime.Native.Time || {};
+	if (localRuntime.Native.Time.values)
+	{
+		return localRuntime.Native.Time.values;
+	}
+
+	var NS = Elm.Native.Signal.make(localRuntime);
+	var Maybe = Elm.Maybe.make(localRuntime);
+
+
+	// FRAMES PER SECOND
+
+	function fpsWhen(desiredFPS, isOn)
+	{
+		var msPerFrame = 1000 / desiredFPS;
+		var ticker = NS.input('fps-' + desiredFPS, null);
+
+		function notifyTicker()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+
+		function firstArg(x, y)
+		{
+			return x;
+		}
+
+		// input fires either when isOn changes, or when ticker fires.
+		// Its value is a tuple with the current timestamp, and the state of isOn
+		var input = NS.timestamp(A3(NS.map2, F2(firstArg), NS.dropRepeats(isOn), ticker));
+
+		var initialState = {
+			isOn: false,
+			time: localRuntime.timer.programStart,
+			delta: 0
+		};
+
+		var timeoutId;
+
+		function update(input,state)
+		{
+			var currentTime = input._0;
+			var isOn = input._1;
+			var wasOn = state.isOn;
+			var previousTime = state.time;
+
+			if (isOn)
+			{
+				timeoutId = localRuntime.setTimeout(notifyTicker, msPerFrame);
+			}
+			else if (wasOn)
+			{
+				clearTimeout(timeoutId);
+			}
+
+			return {
+				isOn: isOn,
+				time: currentTime,
+				delta: (isOn && !wasOn) ? 0 : currentTime - previousTime
+			};
+		}
+
+		return A2(
+			NS.map,
+			function(state) { return state.delta; },
+			A3(NS.foldp, F2(update), update(input.value,initialState), input)
+		);
+	}
+
+
+	// EVERY
+
+	function every(t)
+	{
+		var ticker = NS.input('every-' + t, null);
+		function tellTime()
+		{
+			localRuntime.notify(ticker.id, null);
+		}
+		var clock = A2( NS.map, fst, NS.timestamp(ticker) );
+		setInterval(tellTime, t);
+		return clock;
+	}
+
+
+	function fst(pair)
+	{
+		return pair._0;
+	}
+
+
+	function read(s)
+	{
+		var t = Date.parse(s);
+		return isNaN(t) ? Maybe.Nothing : Maybe.Just(t);
+	}
+
+	return localRuntime.Native.Time.values = {
+		fpsWhen: F2(fpsWhen),
+		every: every,
+		toDate: function(t) { return new window.Date(t); },
+		read: read
+	};
+
+};
 Elm.Native.Transform2D = {};
 Elm.Native.Transform2D.make = function(localRuntime) {
 
@@ -13488,6 +13628,84 @@ Elm.Text.make = function (_elm) {
                       ,Over: Over
                       ,Through: Through};
    return _elm.Text.values;
+};Elm.Time = Elm.Time || {};
+Elm.Time.make = function (_elm) {
+   "use strict";
+   _elm.Time = _elm.Time || {};
+   if (_elm.Time.values)
+   return _elm.Time.values;
+   var _op = {},
+   _N = Elm.Native,
+   _U = _N.Utils.make(_elm),
+   _L = _N.List.make(_elm),
+   $moduleName = "Time",
+   $Basics = Elm.Basics.make(_elm),
+   $Native$Signal = Elm.Native.Signal.make(_elm),
+   $Native$Time = Elm.Native.Time.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var delay = $Native$Signal.delay;
+   var since = F2(function (time,
+   signal) {
+      return function () {
+         var stop = A2($Signal.map,
+         $Basics.always(-1),
+         A2(delay,time,signal));
+         var start = A2($Signal.map,
+         $Basics.always(1),
+         signal);
+         var delaydiff = A3($Signal.foldp,
+         F2(function (x,y) {
+            return x + y;
+         }),
+         0,
+         A2($Signal.merge,start,stop));
+         return A2($Signal.map,
+         F2(function (x,y) {
+            return !_U.eq(x,y);
+         })(0),
+         delaydiff);
+      }();
+   });
+   var timestamp = $Native$Signal.timestamp;
+   var every = $Native$Time.every;
+   var fpsWhen = $Native$Time.fpsWhen;
+   var fps = function (targetFrames) {
+      return A2(fpsWhen,
+      targetFrames,
+      $Signal.constant(true));
+   };
+   var inMilliseconds = function (t) {
+      return t;
+   };
+   var millisecond = 1;
+   var second = 1000 * millisecond;
+   var minute = 60 * second;
+   var hour = 60 * minute;
+   var inHours = function (t) {
+      return t / hour;
+   };
+   var inMinutes = function (t) {
+      return t / minute;
+   };
+   var inSeconds = function (t) {
+      return t / second;
+   };
+   _elm.Time.values = {_op: _op
+                      ,millisecond: millisecond
+                      ,second: second
+                      ,minute: minute
+                      ,hour: hour
+                      ,inMilliseconds: inMilliseconds
+                      ,inSeconds: inSeconds
+                      ,inMinutes: inMinutes
+                      ,inHours: inHours
+                      ,fps: fps
+                      ,fpsWhen: fpsWhen
+                      ,every: every
+                      ,timestamp: timestamp
+                      ,delay: delay
+                      ,since: since};
+   return _elm.Time.values;
 };Elm.Transform2D = Elm.Transform2D || {};
 Elm.Transform2D.make = function (_elm) {
    "use strict";
