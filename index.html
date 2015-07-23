@@ -3718,7 +3718,7 @@ Elm.Main.make = function (_elm) {
                switch (_v0.ctor)
                {case "_Tuple2": return _v0._0;}
                _U.badCase($moduleName,
-               "on line 311, column 33 to 34");
+               "on line 315, column 33 to 34");
             }();
          },
          list);
@@ -3863,6 +3863,7 @@ Elm.Main.make = function (_elm) {
                                    ,8
                                    ,7
                                    ,6])}]));
+   var metaSheet = sheet(metaList);
    var specialList = A2($List.map,
    function (_v13) {
       return function () {
@@ -3972,6 +3973,7 @@ Elm.Main.make = function (_elm) {
                                    ,8
                                    ,7
                                    ,6])}]));
+   var specialSheet = sheet(specialList);
    var normalList = flipHands(_L.fromArray([{ctor: "_Tuple2"
                                             ,_0: "n"
                                             ,_1: _L.fromArray([3])}
@@ -4077,6 +4079,8 @@ Elm.Main.make = function (_elm) {
       }();
    },
    normalList);
+   var shiftSheet = sheet(shiftList);
+   var normalSheet = sheet(normalList);
    var charToIndex = function (c) {
       return function () {
          switch (c + "")
@@ -4203,30 +4207,29 @@ Elm.Main.make = function (_elm) {
          switch (_v34.ctor)
          {case "_Tuple2":
             return function () {
-                 var list = function () {
+                 var s = function () {
                     var _v38 = mod(d.input);
                     switch (_v38)
-                    {case 0: return normalList;
-                       case 16: return shiftList;
-                       case 32: return specialList;
-                       case 48: return metaList;}
+                    {case 0: return normalSheet;
+                       case 16: return shiftSheet;
+                       case 32: return specialSheet;
+                       case 48: return metaSheet;}
                     _U.badCase($moduleName,
                     "between lines 265 and 270");
                  }();
-                 var s = sheet(list);
                  return A2($Graphics$Element.flow,
                  $Graphics$Element.down,
                  _L.fromArray([A4($Graphics$Element.container,
-                              $Graphics$Element.widthOf(sheet(normalList)),
+                              $Graphics$Element.widthOf(normalSheet),
                               40,
                               $Graphics$Element.middle,
                               intro)
-                              ,sheet(list)
+                              ,s
                               ,$Graphics$Element.leftAligned($Text.fromString(d.text))
                               ,faq]));
               }();}
          _U.badCase($moduleName,
-         "between lines 265 and 275");
+         "between lines 265 and 274");
       }();
    });
    var right = $Bitwise.and(keysToKeyset(_L.fromArray([6
@@ -4365,6 +4368,10 @@ Elm.Main.make = function (_elm) {
                       ,displayChord: displayChord
                       ,row: row
                       ,intro: intro
+                      ,normalSheet: normalSheet
+                      ,shiftSheet: shiftSheet
+                      ,specialSheet: specialSheet
+                      ,metaSheet: metaSheet
                       ,sheet: sheet
                       ,faq: faq};
    return _elm.Main.values;
