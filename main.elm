@@ -265,8 +265,8 @@ view (w, h) d =
   let s = case mod d.input of
         0 -> normalSheet
         16 -> shiftSheet
-        32 -> specialSheet
-        48 -> metaSheet
+        32 -> metaSheet
+        48 -> specialSheet
   in flow down
   [ intro
   , s
