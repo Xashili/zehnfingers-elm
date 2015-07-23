@@ -24,6 +24,7 @@ type alias Key = Int
 {-- Helper function for accessing keysets --}
 left = and (keysToKeyset [0, 1, 2, 3])
 right = and (keysToKeyset [6, 7, 8, 9])
+mod = and (keysToKeyset [4, 5])
 leftMod = and (keysToKeyset [0, 1, 2, 3, 4, 5])
 rightMod = and (keysToKeyset [4, 5, 6, 7, 8, 9])
 
@@ -51,7 +52,7 @@ charToIndex c = case c of
   
   otherwise -> 10
   
-leftKeyMap =
+normalList = flipHands
   [ ("n", [3])
   , ("t", [2])
   , ("s", [2, 3])  
@@ -67,9 +68,7 @@ leftKeyMap =
   , ("j", [0, 1, 3])
   , ("d", [0, 1, 2])
   , ("v", [0, 1, 2, 3])
-  ]
-rightKeyMap =
-  [ ("i", [9])
+  , ("i", [9])
   , ("u", [8])  
   , ("z", [8, 9])
   , (" ", [7])  
@@ -86,17 +85,68 @@ rightKeyMap =
   , ("x", [6, 7, 8, 9])  
   ]
 
-keyList = flipHands (leftKeyMap ++ rightKeyMap)
+specialList = map (\(s, k) -> (s, 4::5::k))
+  [ ("(", [3])
+  , ("[", [2])
+  , ("@", [2, 3])  
+  , ("{", [1])
+  , ("+", [1, 3])
+  , ("-", [1, 2])
+  , ("\\", [1, 2, 3])
+  , ("\"", [0])
+  , ("[", [0, 3])
+  , ("<", [0, 2])
+  , ("", [0, 2, 3])
+  , (":", [0, 1])
+  , ("&", [0, 1, 3])
+  , ("=", [0, 1, 2])
+  , ("^", [0, 1, 2, 3])
+  , (")", [6])
+  , ("]", [7])
+  , ("$", [7, 6])  
+  , ("}", [8])
+  , ("*", [8, 6])
+  , ("_", [8, 7])  
+  , ("/", [8, 7, 6])
+  , ("\'", [9])
+  , ("]", [9, 6])
+  , (">", [9, 7])
+  , ("", [9, 7, 6])
+  , (";", [9, 8])
+  , ("|", [9, 8, 6])
+  , ("~", [9, 8, 7])
+  , ("%", [9, 8, 7, 6])
+  ] 
+
+metaList = map (\(s, k) -> (s, 5::k))
+  [ ("DEL", [2])
+  , ("0", [6])
+  , ("1", [7])
+  , ("4", [7, 6])  
+  , ("2", [8])
+  , ("5", [8, 7])  
+  , ("7", [8, 7, 6])
+  , ("3", [9])
+  , ("6", [9, 8])
+  , ("8", [9, 8, 7])
+  , ("9", [9, 8, 7, 6])
+  ]
+
+shiftList = map (\(s, k) -> (shift s, 4::k)) normalList
 
 flipHands : List (String, List Int) -> List (String, List Int)
 flipHands = map (\(s, ks) -> (s, map (\k -> 9 - k) ks))
 
+shift : String -> String
+shift s = case s of
+  " " -> "\n"
+  "," -> "?"
+  "." -> "!"
+  otherwise -> String.toUpper s
+
 keyMap : Dict.Dict Int String
-keyMap =
-  let keys = keyList
-      upper1 = map (\(s, k) -> (String.toUpper s, 4::k)) keys
-      upper2 = map (\(s, k) -> (String.toUpper s, 5::k)) keys
-  in Dict.fromList <| map (\(char, keys) -> (keysToKeyset keys, char)) (keys ++ upper1 ++ upper2)
+keyMap = Dict.fromList <| map (\(char, keys) -> (keysToKeyset keys, char)) <| 
+  (normalList ++ shiftList ++ specialList ++ metaList)
   
 
 {--
@@ -138,7 +188,9 @@ getSide side = case side of
 print : String -> Side -> Keyset -> String
 print s side keys = case get ((getSideMod side) keys) keyMap of
   Nothing -> s
-  Just a -> s ++ a
+  Just a -> case a of
+    "DEL" -> String.slice 0 -1 s
+    otherwise -> s ++ a
 
 updateKeys : (Time, Keyset) -> Model -> Model
 updateKeys (time, keys) old =
@@ -209,9 +261,16 @@ input =
 {--
  Display
 --}
-view (w, h) d = flow down
-  [ container (widthOf sheet) 40 middle intro
-  , sheet
+view (w, h) d =
+  let list = case mod d.input of
+        0 -> normalList
+        16 -> shiftList
+        32 -> specialList
+        48 -> metaList
+      s = sheet list
+  in flow down
+  [ container (widthOf (sheet normalList)) 40 middle intro
+  , sheet list
   , leftAligned <| fromString d.text
   , faq ]
 
@@ -231,7 +290,7 @@ displayChord s keys =
       blueSquare = collage 22 22 [filled blue square]
       redSquare = collage 22 22 [filled red square]
   in flow Graphics.Element.right
-     [ container 25 22 middle (centered <| fromString <| String.toUpper s)
+     [ container 30 22 middle (centered <| fromString s)
      , row (if left then blueSquare else redSquare) bs'
      ]
 
@@ -248,8 +307,8 @@ intro = centered <| Text.concat
   , Text.color yellow <| bold <| fromString " CM"
   ]
 
-sheet = 
-  let keys = sortBy (\(a, c) -> a) keyList
+sheet list = 
+  let keys = sortBy (\(a, c) -> a) list
       col1 = take 10 keys
       col2 = take 10 (drop 10 keys)
       col3 = take 10 (drop 20 keys)
