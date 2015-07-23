@@ -331,47 +331,23 @@ typing single characters.
 
 **How do I type?**
 
-The demo registers the last active chord if
+The implementation registers the last active chord if
  * the same chord is hold longer then 60 milliseconds,
  * the other hand presses anything, or
- * the fingers of the last active hand leaves all keys
+ * the fingers of the last active hand leave all keys
 
 Most chorded layouts only depend on the last point.
 But this is slow when processing single characters (and not [words](http://openstenoproject.org/)).
 
 If typing english words with this layout,
-half of the time you can speed up by alternating hands.
-The time limit makes the setup prone to errors,
-but a good implementation could figure out via try and error,
-how much time you need to change a chord.
-
-The big plus on the other hand is,
-that you can do roll-overs.
-Want to type the common “to”?
-Hold UIO down, then press P. And you are done!
-You can try to find long combinations to form words,
-but it is suggested to raise the keys every second chord.
-Instead of typing “rain” in one go, write “ra” and then “in”.
-
-The layout was optimized to:
- * switch hands as much as possible
- * if characters are on the same hand, try to give them an increasing (press more keys) or decreasing 
-(leave some keys) combination of keys 
- * and not a complicated one, where a hand needs to raise *and* press
- * give more common characters easier chords
-
-This means that complicated combinations
-should be handled as leaving all keys from the first chord,
-then pressing the second. 
-Otherwise, at least at the beginning,
-you will make many mistakes because of the time limit.
-
-For the english corpus I used this comes down to:
-* 47% hand switches between letters
-* 27% increasing combos
-* 21% decreasing combos
-* 5% complicated combos
-
+62% of the time you can speed up by alternating hands.
+If two consecutive characters are on the same hand,
+you can probably make an easy combo:
+Want to type the common “th”?
+Hold I down, wait 60 milliseconds, then press P.
+If three consecutive characters are on the same hand,
+you probably want to raise all the keys inbetween.
+But this happens only in 6% the cases.
 
 **Aren't there too few keys?**
 
@@ -383,9 +359,9 @@ giving both 2 x (2^4 - 1) = 30 chords for the home row.
 At the other layers, with mixed chords allowed, there are 2^8 - 1 = 255 
 possibilities.
 Plenty enough for numbers, brackets, common words, special characters and more.
-But they are not implemented here yet.
+Note however, that this demo only uses the most common ASCII characters and one handed chords.
 
-Alltogether there are 2x30 + 2x255 = 570 chords.
+Alltogether there can be 2x30 + 2x255 = 570 chords.
 
 **This does not work!**
 
@@ -393,7 +369,5 @@ Alltogether there are 2x30 + 2x255 = 570 chords.
 
  * Combinations that uses multiple keys may or may not work based on your browser 
 and keyboard.
-
- * Uppercase letters seem to be bugged anyway.
 """
 
