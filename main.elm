@@ -268,7 +268,7 @@ view (w, h) d =
         32 -> specialSheet
         48 -> metaSheet
   in flow down
-  [ container (widthOf normalSheet) 40 middle intro
+  [ intro
   , s
   , leftAligned <| fromString d.text
   , faq ]
