@@ -262,15 +262,14 @@ input =
  Display
 --}
 view (w, h) d =
-  let list = case mod d.input of
-        0 -> normalList
-        16 -> shiftList
-        32 -> specialList
-        48 -> metaList
-      s = sheet list
+  let s = case mod d.input of
+        0 -> normalSheet
+        16 -> shiftSheet
+        32 -> specialSheet
+        48 -> metaSheet
   in flow down
-  [ container (widthOf (sheet normalList)) 40 middle intro
-  , sheet list
+  [ container (widthOf normalSheet) 40 middle intro
+  , s
   , leftAligned <| fromString d.text
   , faq ]
 
@@ -306,6 +305,11 @@ intro = centered <| Text.concat
   , fromString " and "
   , Text.color yellow <| bold <| fromString " CM"
   ]
+
+normalSheet = sheet normalList
+shiftSheet = sheet shiftList
+specialSheet = sheet specialList
+metaSheet = sheet metaList
 
 sheet list = 
   let keys = sortBy (\(a, c) -> a) list
